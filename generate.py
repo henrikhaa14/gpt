@@ -1,12 +1,9 @@
 # =============================================================================
-# GPT Text Generation Script (Colab Compatible)
+# GPT Text Generation Script
 # =============================================================================
 # Generate text using a trained GPT model.
-# Works on both local machines and Google Colab.
 # =============================================================================
 
-# --- Dependencies ---
-# Uncomment to install in Colab:
 # !pip install tiktoken
 
 import tiktoken
@@ -164,7 +161,7 @@ class GPT(nn.Module):
 # LOAD MODEL
 # =============================================================================
 
-print("🔧 Loading model...")
+print("Loading model...")
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"   Device: {device}")
@@ -188,16 +185,15 @@ print(f"   Loaded: {MODEL_PATH}")
 # =============================================================================
 
 print("\n" + "=" * 50)
-print("🚀 GPT Text Generator")
+print("GPT Text Generator")
 print("=" * 50)
 print(f"   Temperature: {TEMPERATURE} | Tokens: {MAX_NEW_TOKENS} | Top-k: {TOP_K}")
 print("   Type 'quit' to exit\n")
 
 while True:
-    prompt = input("📝 Prompt: ").strip()
+    prompt = input("Prompt: ").strip()
     
     if prompt.lower() == 'quit':
-        print("👋 Goodbye!")
         break
     
     if not prompt:

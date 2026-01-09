@@ -1,18 +1,7 @@
 # =============================================================================
-# GPT Training Script (Colab Compatible)
+# GPT Training Script
 # =============================================================================
 # Train a small GPT model on custom text data.
-# Works on both local machines and Google Colab with GPU acceleration.
-#
-# Colab Setup:
-#   1. Runtime > Change runtime type > GPU
-#   2. Upload your text file to inputs/ folder
-#   3. Run this script
-# =============================================================================
-
-# --- Dependencies ---
-# Uncomment to install in Colab:
-# !pip install tiktoken
 
 import tiktoken
 import torch
@@ -44,7 +33,7 @@ NUM_EPOCHS = 3          # Number of training epochs
 # DATA LOADING
 # =============================================================================
 
-print("📚 Loading data...")
+print("Loading data...")
 with open(INPUT_FILE, 'r', encoding='utf-8', errors='ignore') as f:
     text = f.read()
 
@@ -191,13 +180,13 @@ class GPT(nn.Module):
 # TRAINING SETUP
 # =============================================================================
 
-print("\n🔧 Initializing...")
+print("Initializing...")
 
-# Device selection (automatically uses GPU in Colab)
+# Device selection
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f"   Device: {device}")
+print(f"Device: {device}")
 if device == 'cuda':
-    print(f"   GPU: {torch.cuda.get_device_name(0)}")
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
 
 # Initialize model
 model = GPT(
@@ -210,7 +199,7 @@ model = GPT(
 
 # Print model size
 num_params = sum(p.numel() for p in model.parameters())
-print(f"   Parameters: {num_params:,}")
+print(f"Parameters: {num_params:,}")
 
 # Optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
@@ -223,12 +212,11 @@ def create_batches(tokens: list, seq_len: int):
         if len(batch) == seq_len + 1:
             yield batch
 
-
 # =============================================================================
 # TRAINING LOOP
 # =============================================================================
 
-print("\n🚀 Training started!\n")
+print("\nTraining started!\n")
 
 for epoch in range(NUM_EPOCHS):
     model.train()
@@ -270,7 +258,7 @@ for epoch in range(NUM_EPOCHS):
 # SAVE MODEL
 # =============================================================================
 
-print("💾 Saving model...")
+print("Saving model...")
 torch.save(model.state_dict(), MODEL_SAVE_PATH)
 print(f"   Saved to: {MODEL_SAVE_PATH}")
-print("\n✅ Training complete!")
+print("\nTraining complete!")
