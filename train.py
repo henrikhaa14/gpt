@@ -1,20 +1,11 @@
-# =============================================================================
-# GPT Training Script
-# =============================================================================
-# Train a small GPT model on custom text data.
-
 import tiktoken
 import torch
 import torch.nn as nn
 from tqdm import tqdm  # Progress bars
 
-# =============================================================================
-# CONFIGURATION - Modify these settings as needed
-# =============================================================================
-
 # File settings
-INPUT_FILE = "inputs/tiny-shakespeare.txt"  # Path to training text
-MODEL_SAVE_PATH = "models/gpt_model.pt"     # Where to save the model
+INPUT_FILE = "inputs/input.txt"
+MODEL_SAVE_PATH = "models/gpt_model.pt"
 
 # Model architecture
 VOCAB_SIZE = 50257      # GPT-2 tokenizer vocab size (don't change)
@@ -29,25 +20,16 @@ SEQ_LEN = 512           # Training sequence length
 LEARNING_RATE = 1e-4    # Optimizer learning rate
 NUM_EPOCHS = 3          # Number of training epochs
 
-# =============================================================================
-# DATA LOADING
-# =============================================================================
-
-print("Loading data...")
+print("\nLoading data...\n")
 with open(INPUT_FILE, 'r', encoding='utf-8', errors='ignore') as f:
     text = f.read()
 
-# Tokenize using GPT-2's tokenizer
 tokenizer = tiktoken.get_encoding("gpt2")
 token_ids = tokenizer.encode(text)
 
-print(f"   Characters: {len(text):,}")
-print(f"   Tokens: {len(token_ids):,}")
-print(f"   Steps/epoch: ~{len(token_ids) // SEQ_LEN:,}")
-
-# =============================================================================
-# MODEL ARCHITECTURE
-# =============================================================================
+print(f"Characters: {len(text):,}")
+print(f"Tokens: {len(token_ids):,}")
+print(f"Steps/epoch: ~{len(token_ids) // SEQ_LEN:,}")
 
 class SelfAttention(nn.Module):
     """
@@ -104,7 +86,7 @@ class FeedForward(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(embed_dim, ff_dim),    # Expand
-            nn.GELU(),                        # Smooth activation
+            nn.GELU(),                       # Smooth activation
             nn.Linear(ff_dim, embed_dim),    # Contract
         )
     
@@ -175,18 +157,8 @@ class GPT(nn.Module):
         logits = self.head(x)  # (B, T, vocab_size)
         return logits
 
-
-# =============================================================================
-# TRAINING SETUP
-# =============================================================================
-
 print("Initializing...")
-
-# Device selection
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f"Device: {device}")
-if device == 'cuda':
-    print(f"GPU: {torch.cuda.get_device_name(0)}")
+device = 'cpu'
 
 # Initialize model
 model = GPT(
@@ -212,11 +184,7 @@ def create_batches(tokens: list, seq_len: int):
         if len(batch) == seq_len + 1:
             yield batch
 
-# =============================================================================
-# TRAINING LOOP
-# =============================================================================
-
-print("\nTraining started!\n")
+print("\nTraining started.\n")
 
 for epoch in range(NUM_EPOCHS):
     model.train()
@@ -252,13 +220,9 @@ for epoch in range(NUM_EPOCHS):
     
     # Epoch summary
     avg_loss = total_loss / num_steps
-    print(f"   Epoch {epoch + 1} complete | Avg loss: {avg_loss:.4f}\n")
-
-# =============================================================================
-# SAVE MODEL
-# =============================================================================
+    print(f"Epoch {epoch + 1} complete | Avg loss: {avg_loss:.4f}\n")
 
 print("Saving model...")
 torch.save(model.state_dict(), MODEL_SAVE_PATH)
-print(f"   Saved to: {MODEL_SAVE_PATH}")
+print(f"Saved to: {MODEL_SAVE_PATH}")
 print("\nTraining complete!")

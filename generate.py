@@ -1,20 +1,7 @@
-# =============================================================================
-# GPT Text Generation Script
-# =============================================================================
-# Generate text using a trained GPT model.
-# =============================================================================
-
-# !pip install tiktoken
-
 import tiktoken
 import torch
 import torch.nn as nn
 
-# =============================================================================
-# CONFIGURATION - Must match training settings!
-# =============================================================================
-
-# Model path
 MODEL_PATH = "models/gpt_model.pt"
 
 # Model architecture (must match training!)
@@ -25,13 +12,9 @@ NUM_LAYERS = 2
 MAX_SEQ_LEN = 512
 
 # Generation settings
-MAX_NEW_TOKENS = 100    # Number of tokens to generate
-TEMPERATURE = 0.7       # Creativity: 0.1=focused, 1.0=creative, >1=chaotic
-TOP_K = 50              # Sample from top K tokens (None=all)
-
-# =============================================================================
-# MODEL ARCHITECTURE (same as training)
-# =============================================================================
+MAX_NEW_TOKENS = 100
+TEMPERATURE = 0.7
+TOP_K = 50
 
 class SelfAttention(nn.Module):
     """Multi-head self-attention with causal masking."""
@@ -156,16 +139,9 @@ class GPT(nn.Module):
         
         return tokens
 
-
-# =============================================================================
-# LOAD MODEL
-# =============================================================================
-
 print("Loading model...")
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f"   Device: {device}")
-
+device = 'cpu'
 tokenizer = tiktoken.get_encoding("gpt2")
 
 model = GPT(
@@ -178,17 +154,9 @@ model = GPT(
 
 model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
 model.eval()
-print(f"   Loaded: {MODEL_PATH}")
-
-# =============================================================================
-# INTERACTIVE GENERATION
-# =============================================================================
-
-print("\n" + "=" * 50)
-print("GPT Text Generator")
-print("=" * 50)
-print(f"   Temperature: {TEMPERATURE} | Tokens: {MAX_NEW_TOKENS} | Top-k: {TOP_K}")
-print("   Type 'quit' to exit\n")
+print(f"Loaded: {MODEL_PATH}")
+print(f"Temperature: {TEMPERATURE} | Tokens: {MAX_NEW_TOKENS} | Top-k: {TOP_K}")
+print("Type 'quit' to exit\n")
 
 while True:
     prompt = input("Prompt: ").strip()
@@ -205,6 +173,4 @@ while True:
     
     # Decode and display
     text = tokenizer.decode(output[0].tolist())
-    print("\n" + "-" * 50)
-    print(text)
-    print("-" * 50 + "\n")
+    print("\n" + text + "\n")
