@@ -1,35 +1,8 @@
 import tiktoken
 import torch
 import torch.nn as nn
-from tqdm import tqdm  # Progress bars
-
-# File settings
-INPUT_FILE = "inputs/input.txt"
-MODEL_SAVE_PATH = "models/gpt_model.pt"
-
-# Model architecture
-VOCAB_SIZE = 50257      # GPT-2 tokenizer vocab size (don't change)
-EMBEDDING_DIM = 128     # Size of token embeddings
-NUM_HEADS = 8           # Number of attention heads
-NUM_LAYERS = 2          # Number of transformer blocks
-MAX_SEQ_LEN = 512       # Maximum context window
-
-# Training hyperparameters
-BATCH_SIZE = 16         # Samples per batch (reduce if out of memory)
-SEQ_LEN = 512           # Training sequence length
-LEARNING_RATE = 1e-4    # Optimizer learning rate
-NUM_EPOCHS = 3          # Number of training epochs
-
-print("\nLoading data...\n")
-with open(INPUT_FILE, 'r', encoding='utf-8', errors='ignore') as f:
-    text = f.read()
-
-tokenizer = tiktoken.get_encoding("gpt2")
-token_ids = tokenizer.encode(text)
-
-print(f"Characters: {len(text):,}")
-print(f"Tokens: {len(token_ids):,}")
-print(f"Steps/epoch: ~{len(token_ids) // SEQ_LEN:,}")
+from tqdm import tqdm
+import json
 
 class SelfAttention(nn.Module):
     """
@@ -157,25 +130,46 @@ class GPT(nn.Module):
         logits = self.head(x)  # (B, T, vocab_size)
         return logits
 
+while True:
+    INPUT_FILE = input("Enter input file name: ")
+    print("\nLoading data...\n")
+    try:
+        with open(f"inputs/{INPUT_FILE}.txt", 'r', encoding='utf-8', errors='ignore') as f:
+            text = f.read()
+    except:
+        print(f"Cannot find input file {INPUT_FILE}. Please try again.")
+    else:
+        break
+
+with open('parameters.json', 'r') as f:
+    params = json.load(f)
+
+MODEL_NAME = input("Enter model name: ")
+
+tokenizer = tiktoken.get_encoding("gpt2")
+token_ids = tokenizer.encode(text)
+
+print(f"Characters: {len(text):,}")
+print(f"Tokens: {len(token_ids):,}")
+print(f"Steps/epoch: ~{len(token_ids) // params['max_seq_len']:,}")
+
 print("Initializing...")
-device = 'cpu'
 
 # Initialize model
 model = GPT(
-    vocab_size=VOCAB_SIZE,
-    embed_dim=EMBEDDING_DIM,
-    num_heads=NUM_HEADS,
-    num_layers=NUM_LAYERS,
-    max_seq_len=MAX_SEQ_LEN
-).to(device)
+    vocab_size=params['vocab_size'],
+    embed_dim=params['embedding_dim'],
+    num_heads=params['num_heads'],
+    num_layers=params['num_layers'],
+    max_seq_len=params['max_seq_len']
+).to('cpu')
 
 # Print model size
 num_params = sum(p.numel() for p in model.parameters())
 print(f"Parameters: {num_params:,}")
 
 # Optimizer
-optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
-
+optimizer = torch.optim.AdamW(model.parameters(), lr=params['learning_rate'])
 
 def create_batches(tokens: list, seq_len: int):
     """Generate training batches from token list."""
@@ -186,18 +180,18 @@ def create_batches(tokens: list, seq_len: int):
 
 print("\nTraining started.\n")
 
-for epoch in range(NUM_EPOCHS):
+for epoch in range(params['num_epochs']):
     model.train()
     total_loss = 0
     num_steps = 0
     
     # Create progress bar
-    batches = list(create_batches(token_ids, SEQ_LEN))
-    pbar = tqdm(batches, desc=f"Epoch {epoch + 1}/{NUM_EPOCHS}")
+    batches = list(create_batches(token_ids, params['seq_len']))
+    pbar = tqdm(batches, desc=f"Epoch {epoch + 1}/{params['num_epochs']}")
     
     for batch in pbar:
         # Prepare input (all but last) and target (all but first)
-        batch = torch.tensor(batch, dtype=torch.long, device=device).unsqueeze(0)
+        batch = torch.tensor(batch, dtype=torch.long, device='cpu').unsqueeze(0)
         inp = batch[:, :-1]
         tgt = batch[:, 1:]
         
@@ -223,6 +217,6 @@ for epoch in range(NUM_EPOCHS):
     print(f"Epoch {epoch + 1} complete | Avg loss: {avg_loss:.4f}\n")
 
 print("Saving model...")
-torch.save(model.state_dict(), MODEL_SAVE_PATH)
-print(f"Saved to: {MODEL_SAVE_PATH}")
+torch.save(model.state_dict(), f"models/{MODEL_NAME}.pt")
+print(f"Saved {MODEL_NAME}")
 print("\nTraining complete!")

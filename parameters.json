@@ -1,0 +1,16 @@
+{
+    "vocab_size": 50257,
+    "embedding_dim": 128,
+    "num_heads": 1,
+    "num_layers": 2,
+    "max_seq_len": 512,
+
+    "batch_size": 16,
+    "seq_len": 512,
+    "learning_rate": 1e-4,
+    "num_epochs": 3,
+
+    "max_new_tokens": 100,
+    "temperature": 0.7,
+    "top_k": 50
+}

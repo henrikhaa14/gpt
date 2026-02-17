@@ -1,20 +1,7 @@
 import tiktoken
 import torch
 import torch.nn as nn
-
-MODEL_PATH = "models/gpt_model.pt"
-
-# Model architecture (must match training!)
-VOCAB_SIZE = 50257
-EMBEDDING_DIM = 128
-NUM_HEADS = 8
-NUM_LAYERS = 2
-MAX_SEQ_LEN = 512
-
-# Generation settings
-MAX_NEW_TOKENS = 100
-TEMPERATURE = 0.7
-TOP_K = 50
+import json
 
 class SelfAttention(nn.Module):
     """Multi-head self-attention with causal masking."""
@@ -139,23 +126,34 @@ class GPT(nn.Module):
         
         return tokens
 
-print("Loading model...")
+with open('parameters.json', 'r') as f:
+    params = json.load(f)
 
-device = 'cpu'
 tokenizer = tiktoken.get_encoding("gpt2")
-
 model = GPT(
-    vocab_size=VOCAB_SIZE,
-    embed_dim=EMBEDDING_DIM,
-    num_heads=NUM_HEADS,
-    num_layers=NUM_LAYERS,
-    max_seq_len=MAX_SEQ_LEN
-).to(device)
+    vocab_size=params['vocab_size'],
+    embed_dim=params['embedding_dim'],
+    num_heads=params['num_heads'],
+    num_layers=params['num_layers'],
+    max_seq_len=params['max_seq_len']
+).to('cpu')
 
-model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
+while True:
+    MODEL_NAME = input("Enter model name: ")
+    print("\nLoading model...\n")
+    try:
+        model.load_state_dict(torch.load(f"models/{MODEL_NAME}.pt", map_location='cpu'))
+    except Exception as e:
+        print(f"Cannot find model {MODEL_NAME}. Please try again.")
+        print(e)
+    else:
+        break
+
 model.eval()
-print(f"Loaded: {MODEL_PATH}")
-print(f"Temperature: {TEMPERATURE} | Tokens: {MAX_NEW_TOKENS} | Top-k: {TOP_K}")
+print(f"Loaded: {MODEL_NAME}")
+print(f"Temperature: {params['temperature']}")
+print(f"Tokens: {params['max_new_tokens']}")
+print(f"Top-k: {params['top_k']}")
 print("Type 'quit' to exit\n")
 
 while True:
@@ -168,8 +166,8 @@ while True:
         continue
     
     # Tokenize and generate
-    tokens = torch.tensor(tokenizer.encode(prompt), device=device).unsqueeze(0)
-    output = model.generate(tokens, MAX_NEW_TOKENS, TEMPERATURE, TOP_K)
+    tokens = torch.tensor(tokenizer.encode(prompt), device='cpu').unsqueeze(0)
+    output = model.generate(tokens, params['max_new_tokens'], params['temperature'], params['top_k'])
     
     # Decode and display
     text = tokenizer.decode(output[0].tolist())
