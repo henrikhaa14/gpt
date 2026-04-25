@@ -155,6 +155,9 @@ print(f"Steps/epoch: ~{len(token_ids) // params['max_seq_len']:,}")
 
 print("Initializing...")
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Using device: {device}")
+
 # Initialize model
 model = GPT(
     vocab_size=params['vocab_size'],
@@ -162,7 +165,15 @@ model = GPT(
     num_heads=params['num_heads'],
     num_layers=params['num_layers'],
     max_seq_len=params['max_seq_len']
-).to('cpu')
+).to(device)
+
+# Compile model for faster training if supported (PyTorch 2.0+)
+if hasattr(torch, 'compile') and device != 'cpu':
+    try:
+        model = torch.compile(model)
+        print("Model compiled.")
+    except Exception as e:
+        print(f"Could not compile model: {e}")
 
 # Print model size
 num_params = sum(p.numel() for p in model.parameters())
@@ -191,7 +202,7 @@ for epoch in range(params['num_epochs']):
     
     for batch in pbar:
         # Prepare input (all but last) and target (all but first)
-        batch = torch.tensor(batch, dtype=torch.long, device='cpu').unsqueeze(0)
+        batch = torch.tensor(batch, dtype=torch.long, device=device).unsqueeze(0)
         inp = batch[:, :-1]
         tgt = batch[:, 1:]
         
